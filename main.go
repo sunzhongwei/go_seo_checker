@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/csv"
 	"fmt"
 	"github.com/gocolly/colly"
 	"github.com/gocolly/colly/extensions"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -16,7 +18,18 @@ func main() {
 		return
 	}
 	domain = os.Args[1]
+	file, err := os.Create(domain + ".csv")
+	if err != nil {
+		log.Println(err)
+	}
+	defer file.Close()
+	writer := csv.NewWriter(file)
+	writer.Comma = ','
+	headline := []string{"URL", "Title", "Keywords", "Description"}
+	writer.Write(headline)
+	writer.Flush()
 
+	row := make([]string, 4)
 	c := colly.NewCollector(
 		colly.AllowedDomains(domain),
 	)
@@ -29,15 +42,21 @@ func main() {
 	})
 
 	c.OnHTML("title", func(e *colly.HTMLElement) {
-		fmt.Println("Title: ", strings.TrimSpace(e.Text))
+		title := strings.TrimSpace(e.Text)
+		fmt.Println("Title: ", title)
+		row[1] = title
 	})
 
 	c.OnHTML(`meta[name=description]`, func(e *colly.HTMLElement) {
-		fmt.Println("Description: ", strings.TrimSpace(e.Attr("content")))
+		description := strings.TrimSpace(e.Attr("content"))
+		fmt.Println("Description: ", description)
+		row[3] = description
 	})
 
 	c.OnHTML(`meta[name=keywords]`, func(e *colly.HTMLElement) {
-		fmt.Println("Keywords: ", strings.TrimSpace(e.Attr("content")))
+		keywords := strings.TrimSpace(e.Attr("content"))
+		fmt.Println("Keywords: ", keywords)
+		row[2] = keywords
 	})
 
 	// Find and visit all links
@@ -47,8 +66,12 @@ func main() {
 
 	// Before making a request
 	c.OnRequest(func(r *colly.Request) {
+		writer.Write(row)
+		writer.Flush()
 		fmt.Println("-----\nVisiting: ", r.URL)
+		row[0] = r.URL.String()
 	})
 
+	defer writer.Flush()
 	c.Visit("https://" + domain)
 }
