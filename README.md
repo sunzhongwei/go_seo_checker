@@ -11,3 +11,4 @@ example:
 
 ## TODO
 - Exclude url list by pattern
+- Set mobile agent header
