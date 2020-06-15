@@ -8,3 +8,6 @@ example:
 ## Done
 - Show title，keywords, description of pages
 - Save result to CSV file
+
+## TODO
+- Exclude url list by pattern
